@@ -1,0 +1,22 @@
+[
+  {
+    "id": "history",
+    "name": "History",
+    "subcategories": ["Ancient", "Medieval", "Modern", "World Wars"]
+  },
+  {
+    "id": "science",
+    "name": "Science",
+    "subcategories": ["Physics", "Chemistry", "Biology", "Astronomy"]
+  },
+  {
+    "id": "geography",
+    "name": "Geography",
+    "subcategories": ["World Geography", "Physical Geography", "Human Geography"]
+  },
+  {
+    "id": "entertainment",
+    "name": "Entertainment",
+    "subcategories": ["Movies", "Music", "Television", "Video Games"]
+  }
+]

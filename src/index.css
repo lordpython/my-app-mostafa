@@ -1,0 +1,158 @@
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Arabic:wght@400;500;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+    --font-arabic: 'Noto Sans Arabic', sans-serif;
+  }
+
+  body {
+    @apply bg-gradient-to-br from-neutral-950 via-neutral-850 to-neutral-950 text-white min-h-screen;
+    font-family: var(--font-arabic);
+    font-feature-settings: "rlig" 1, "calt" 1;
+    background-size: 200% 200%;
+    animation: gradient 15s ease infinite;
+  }
+}
+
+@layer components {
+  .modern-card {
+    @apply glass-morphism p-6 rounded-2xl transition-all duration-300
+    hover:shadow-neon hover:scale-[1.02] hover:-translate-y-1;
+  }
+
+  .hero-section {
+    @apply relative min-h-[90vh] flex items-center justify-center overflow-hidden
+    bg-gradient-diagonal from-primary-900 via-primary-800 to-secondary-900
+    animate-gradient-x;
+  }
+
+  .nav-link {
+    @apply relative px-4 py-2 text-white/80 hover:text-white transition-colors
+    after:content-[''] after:absolute after:bottom-0 after:left-0 after:w-0 
+    after:h-0.5 after:bg-primary-400 after:transition-all after:duration-300
+    hover:after:w-full;
+  }
+
+  .btn {
+    @apply inline-flex items-center justify-center rounded-xl text-sm font-medium
+    transition-all duration-300 disabled:opacity-50 disabled:pointer-events-none
+    focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2
+    active:scale-95;
+  }
+
+  .btn-primary {
+    @apply bg-gradient-to-r from-primary-600 to-primary-500 text-white
+    hover:from-primary-700 hover:to-primary-600 shadow-lg hover:shadow-xl
+    hover:shadow-primary-500/20;
+  }
+
+  .btn-secondary {
+    @apply bg-gradient-to-r from-secondary-600 to-secondary-500 text-white
+    hover:from-secondary-700 hover:to-secondary-600 shadow-lg hover:shadow-xl
+    hover:shadow-secondary-500/20;
+  }
+
+  .input {
+    @apply glass-morphism w-full px-4 py-3 rounded-xl text-white
+    placeholder:text-white/50 focus:ring-2 focus:ring-primary-500
+    focus:outline-none transition-all duration-300;
+  }
+
+  .typing-text {
+    @apply font-mono text-gradient text-xl font-bold;
+  }
+}
+
+/* Modern scrollbar */
+::-webkit-scrollbar {
+  width: 10px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-neutral-900;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-primary-600 rounded-full;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-primary-500;
+}
+
+/* Custom animations */
+@keyframes gradient {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.animate-typing {
+  overflow: hidden;
+  border-right: 2px solid var(--primary-400);
+  white-space: nowrap;
+  animation: typing 3.5s steps(40, end),
+             blink-caret 0.75s step-end infinite;
+}
+
+@keyframes typing {
+  from { width: 0; }
+  to { width: 100%; }
+}
+
+@keyframes blink-caret {
+  from, to { border-color: transparent; }
+  50% { border-color: var(--primary-400); }
+}
+
+/* Game event styles */
+.game-event-bonus {
+  background: linear-gradient(135deg, rgba(79, 70, 229, 0.2), rgba(147, 51, 234, 0.2));
+  border: 1px solid rgba(79, 70, 229, 0.4);
+}
+
+.game-event-powerUp {
+  background: linear-gradient(135deg, rgba(236, 72, 153, 0.2), rgba(244, 63, 94, 0.2));
+  border: 1px solid rgba(236, 72, 153, 0.4);
+}
+
+.game-event-milestone {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(5, 150, 105, 0.2));
+  border: 1px solid rgba(16, 185, 129, 0.4);
+}
+
+.game-event-teamwork {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.2), rgba(217, 119, 6, 0.2));
+  border: 1px solid rgba(245, 158, 11, 0.4);
+}
+
+.stat-item {
+  @apply bg-white/5 p-3 rounded-lg text-center;
+}
+
+/* Enhanced animations */
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow: 0 0 5px var(--primary-400),
+                0 0 20px var(--primary-600);
+  }
+  50% {
+    box-shadow: 0 0 10px var(--primary-400),
+                0 0 30px var(--primary-600),
+                0 0 45px var(--primary-800);
+  }
+}

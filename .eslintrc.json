@@ -1,0 +1,47 @@
+{
+  "extends": [
+    "eslint:recommended",
+    "react-app",
+    "plugin:react/jsx-runtime",
+    "prettier"
+  ],
+  "parser": "@typescript-eslint/parser",
+  "parserOptions": {
+    "project": ["./tsconfig.json", "./src/tsconfig.node.json"]
+  },
+  "plugins": ["@typescript-eslint"],
+  "root": true,
+  "ignorePatterns": [
+    "dist",
+    "vite.config.ts",
+    "tailwind.config.js",
+    "src/vite.config.ts"
+  ],
+  "rules": {
+    "@typescript-eslint/consistent-type-imports": [
+      "error",
+      { "fixStyle": "separate-type-imports" }
+    ],
+    "@typescript-eslint/no-restricted-imports": [
+      "error",
+      {
+        "paths": [
+          {
+            "name": "react-redux",
+            "importNames": ["useSelector", "useStore", "useDispatch"],
+            "message": "Please use pre-typed versions from `src/hooks/hooks.ts` instead."
+          }
+        ]
+      }
+    ],
+    "@typescript-eslint/no-unused-vars": ["warn", { 
+      "argsIgnorePattern": "^_",
+      "varsIgnorePattern": "^_"
+    }],
+    "react-hooks/exhaustive-deps": "warn"
+  },
+  "overrides": [
+    { "files": ["*.{c,m,}{t,j}s", "*.{t,j}sx"] },
+    { "files": ["*{test,spec}.{t,j}s?(x)"], "env": { "jest": true } }
+  ]
+}

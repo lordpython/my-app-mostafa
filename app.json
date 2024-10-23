@@ -1,0 +1,15 @@
+{
+  "expo": {
+    "extra": {
+      "eas": {
+        "projectId": "86912589-96f9-4869-8ff8-b9fa374d2025"
+      }
+    },
+    "android": {
+      "package": "com.lordq8.vitetemplateredux"
+    },
+    "ios": {
+      "bundleIdentifier": "com.lordq8.vitetemplateredux"
+    }
+  }
+}
