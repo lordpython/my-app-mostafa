@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import type React from "react";
+import React from "react";  // Changed from 'import type React' to 'import React'
 import { createContext, useContext, useState, useEffect } from "react"
 import { apiService } from '../services/api/apiService'
 
@@ -27,7 +27,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
   children,
 }) => {
   // Add development bypass
-  const isDevelopment = import.meta.env.DEV
+  const isDevelopment = process.env.NODE_ENV === 'development'
   const [user, setUser] = useState<User | null>(isDevelopment ? {
     id: 'dev-user',
     email: 'dev@example.com',

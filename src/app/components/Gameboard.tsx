@@ -1,4 +1,4 @@
-import type React from "react"
+import React from "react"
 import { motion } from "framer-motion"
 import { Button } from "../../components/ui/Button"
 import type { Category } from "../../types"
@@ -30,7 +30,7 @@ const Gameboard: React.FC<GameboardProps> = ({
             {category.name}
           </h3>
           <div className="space-y-3">
-            {[100, 200, 300].map(points => (
+            {[100, 200, 300, 700, 1000].map(points => (
               <Button
                 key={points}
                 onClick={() => onSelectQuestion(category.id, points)}

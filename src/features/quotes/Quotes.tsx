@@ -1,4 +1,4 @@
-import type React from "react"
+import React from "react"
 import { useGetQuotesQuery } from "./quotesApiSlice"
 import type { Quote } from "../../types"
 
