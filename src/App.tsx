@@ -6,6 +6,7 @@ import { AuthLayout } from "./components/auth/AuthLayout"
 import TriviaGame from "./app/components/TriviaGame"
 import { auth, db } from "./config/firebase";
 import { collection, getDocs } from 'firebase/firestore';
+import React from "react";
 
 const App = () => {
   // Verify Firebase connection
