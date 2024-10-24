@@ -9,6 +9,11 @@ interface ProtectedRouteProps {
 export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   const { user, isLoading } = useAuth()
   const location = useLocation()
+  const isDevelopment = import.meta.env.DEV
+
+  if (isDevelopment) {
+    return <>{children}</>
+  }
 
   if (isLoading) {
     return (

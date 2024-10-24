@@ -1,27 +1,43 @@
-# vite-template-redux
+# Trivia Game
 
-Uses [Vite](https://vitejs.dev/), [Vitest](https://vitest.dev/), and [React Testing Library](https://github.com/testing-library/react-testing-library) to create a modern [React](https://react.dev/) app compatible with [Create React App](https://create-react-app.dev/)
+A modern, interactive trivia game built with React, TypeScript, and Redux Toolkit. Features team-based gameplay, multiple categories, and real-time scoring.
 
-```sh
-npx degit reduxjs/redux-templates/packages/vite-template-redux my-app
-```
+## Quick Start - Login Access
 
-## Goals
+### Development Login
 
-- Easy migration from Create React App or Vite
-- As beginner friendly as Create React App
-- Optimized performance compared to Create React App
-- Customizable without ejecting
+During development, you can use these test credentials:
 
-## Scripts
+## Features
 
-- `dev`/`start` - start dev server and open browser
-- `build` - build for production
-- `preview` - locally preview production build
-- `test` - launch test runner
+- 🎮 Team-based gameplay with customizable team names and players
+- 📚 Multiple question categories and difficulty levels
+- 🎯 Real-time scoring and feedback
+- ⏱️ Timed questions with visual countdown
+- 🎨 Modern UI with animations and transitions
+- 🌐 Arabic language support
+- 💫 Power-ups and special question types
+- 📊 Team statistics and game progress tracking
 
-## Inspiration
+## Tech Stack
 
-- [Create React App](https://github.com/facebook/create-react-app/tree/main/packages/cra-template)
-- [Vite](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react)
-- [Vitest](https://github.com/vitest-dev/vitest/tree/main/examples/react-testing-lib)
+- React 18
+- TypeScript
+- Redux Toolkit
+- Framer Motion
+- Tailwind CSS
+- Styled Components
+- Vite
+- Vitest for testing
+
+## Getting Started
+
+### Prerequisites
+
+- Node.js (v16 or higher)
+- npm or yarn
+
+### Installation
+
+1. Clone the repository:
+

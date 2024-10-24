@@ -95,24 +95,29 @@ export default {
   plugins: [
     require('@tailwindcss/forms'),
     require('@tailwindcss/typography'),
-    function({ addUtilities }) {
-      const newUtilities = {
+    function({ addUtilities, addBase }) {
+      addUtilities({
         '.glass-morphism': {
           'background': 'rgba(255, 255, 255, 0.05)',
           'backdrop-filter': 'blur(10px)',
           'border': '1px solid rgba(255, 255, 255, 0.1)',
+          '@media (forced-colors: active)': {
+            'forced-color-adjust': 'none',
+            '-ms-high-contrast-adjust': 'none',
+          }
         },
         '.text-gradient': {
-          'background': 'linear-gradient(to right, #6366f1, #d946ef)',
+          'background-image': 'linear-gradient(to right, #6366f1, #d946ef)',
           '-webkit-background-clip': 'text',
-          '-webkit-text-fill-color': 'transparent',
+          'background-clip': 'text',
+          'color': 'transparent',
         },
         '.animate-gradient-x': {
           'background-size': '200% 200%',
           'animation': 'gradient 15s ease infinite',
+          'transform': 'translateZ(0)',
         },
-      }
-      addUtilities(newUtilities)
+      })
     },
   ],
 }

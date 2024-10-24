@@ -7,6 +7,7 @@ import type { Category } from "../../types"
 import Button from "../../components/ui/Button"
 import Loader from "./Loader"
 import categoriesData from "../../data/categories.json" // Import the categories data
+import { motion, AnimatePresence } from "framer-motion"
 
 interface CategorySelectionProps {
   onSubmit: (selection: CategorySelectionData) => void;
@@ -27,6 +28,11 @@ const CategorySelection: React.FC<CategorySelectionProps> = ({ onSubmit }) => {
   const [selectedSubcategories, setSelectedSubcategories] = useState<string[]>([]);
   const [difficulty, setDifficulty] = useState<Difficulty>('medium');
   const [isLoading, setIsLoading] = useState(false);
+  const [hoveredCategory, setHoveredCategory] = useState<string | null>(null);
+
+  const handleCategorySelect = (id: string) => {
+    setSelectedCategory(prev => prev === id ? '' : id);
+  };
 
   const handleSubmit = () => {
     if (isLoading) return;
@@ -39,83 +45,153 @@ const CategorySelection: React.FC<CategorySelectionProps> = ({ onSubmit }) => {
     });
   };
 
-  const currentCategory = categoriesData.find(cat => cat.id === selectedCategory);
+  // Animation variants
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1,
+        when: "beforeChildren"
+      }
+    },
+    exit: {
+      opacity: 0,
+      transition: {
+        staggerChildren: 0.05,
+        staggerDirection: -1,
+        when: "afterChildren"
+      }
+    }
+  };
+
+  const categoryVariants = {
+    hidden: { y: 20, opacity: 0 },
+    visible: { 
+      y: 0, 
+      opacity: 1,
+      transition: {
+        type: "spring",
+        stiffness: 300,
+        damping: 24
+      }
+    },
+    exit: {
+      y: -20,
+      opacity: 0
+    }
+  };
 
   if (isLoading) {
-    return <Loader />;
+    return (
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="flex justify-center items-center min-h-screen"
+      >
+        <Loader />
+      </motion.div>
+    );
   }
 
   return (
-    <div className="p-6 max-w-2xl mx-auto">
-      <h2 className="text-2xl font-bold mb-4">Select Category</h2>
-      
-      <div className="mb-6">
-        <label className="block mb-2">Category:</label>
-        <select 
-          value={selectedCategory}
-          onChange={(e) => {
-            setSelectedCategory(e.target.value);
-            setSelectedSubcategories([]);
-          }}
-          className="w-full p-2 border rounded"
-        >
-          <option value="">Select a category</option>
-          {categoriesData.map(category => (
-            <option key={category.id} value={category.id}>
-              {category.name}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      {currentCategory?.subcategories && (
-        <div className="mb-6">
-          <label className="block mb-2">Subcategories:</label>
-          <div className="space-y-2">
-            {currentCategory.subcategories.map(sub => (
-              <label key={sub} className="flex items-center">
-                <input
-                  type="checkbox"
-                  checked={selectedSubcategories.includes(sub)}
-                  onChange={(e) => {
-                    if (e.target.checked) {
-                      setSelectedSubcategories([...selectedSubcategories, sub]);
-                    } else {
-                      setSelectedSubcategories(selectedSubcategories.filter(s => s !== sub));
-                    }
-                  }}
-                  className="mr-2"
-                />
-                {sub}
-              </label>
-            ))}
-          </div>
-        </div>
-      )}
-
-      <div className="mb-6">
-        <label className="block mb-2">Difficulty:</label>
-        <select
-          value={difficulty}
-          onChange={(e) => setDifficulty(e.target.value as Difficulty)}
-          className="w-full p-2 border rounded"
-        >
-          {DIFFICULTIES.map(diff => (
-            <option key={diff} value={diff}>
-              {diff.charAt(0).toUpperCase() + diff.slice(1)}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      <Button
-        onClick={handleSubmit}
-        disabled={!selectedCategory || isLoading}
-        variant="primary"
-        className="w-full"
+    <div className="min-h-screen p-4 sm:p-6 lg:p-8 bg-gradient-to-br from-neutral-900 via-primary-900/20 to-neutral-900" dir="rtl">
+      <motion.div
+        className="max-w-4xl mx-auto glass-morphism rounded-2xl p-6 sm:p-8"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
       >
-        Continue
-      </Button>
+        <motion.h2 
+          className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-6 text-center"
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+        >
+          اختر الفئات
+        </motion.h2>
+        
+        <motion.div 
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6"
+          variants={containerVariants}
+          initial="hidden"
+          animate="visible"
+          exit="exit"
+        >
+          {categoriesData.map(category => (
+            <motion.div
+              key={category.id}
+              variants={categoryVariants}
+              layout
+              className={`
+                relative overflow-hidden rounded-xl cursor-pointer
+                ${selectedCategory === category.id 
+                  ? 'ring-2 ring-primary-500 bg-white/10' 
+                  : 'bg-white/5'
+                }
+              `}
+              onClick={() => handleCategorySelect(category.id)}
+              whileHover={{ 
+                scale: 1.03,
+                boxShadow: "0 0 20px rgba(99, 102, 241, 0.2)"
+              }}
+              whileTap={{ scale: 0.98 }}
+            >
+              {hoveredCategory === category.id && (
+                <motion.div 
+                  className="absolute inset-0 bg-gradient-to-r from-primary-500/20 to-secondary-500/20"
+                  layoutId="hoverBackground"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                />
+              )}
+              
+              <div className="relative p-4 z-10">
+                <h3 className="text-lg sm:text-xl font-semibold mb-2 text-white">
+                  {category.name}
+                </h3>
+                {category.subcategories && (
+                  <p className="text-sm text-white/70">
+                    {category.subcategories.join(' • ')}
+                  </p>
+                )}
+              </div>
+            </motion.div>
+          ))}
+        </motion.div>
+
+        <motion.div 
+          className="mt-8 text-center"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+        >
+          <Button
+            onClick={handleSubmit}
+            variant="primary"
+            size="large"
+            className="min-w-[200px] relative overflow-hidden group"
+            disabled={!selectedCategory}
+          >
+            <motion.div
+              className="absolute inset-0 bg-gradient-to-r from-primary-600/20 to-primary-400/20"
+              initial={{ x: "-100%" }}
+              animate={{
+                x: "100%",
+              }}
+              transition={{
+                duration: 2,
+                repeat: Infinity,
+                ease: "linear",
+              }}
+            />
+            <span className="relative z-10">ابدأ اللعب</span>
+          </Button>
+        </motion.div>
+      </motion.div>
     </div>
   );
 };

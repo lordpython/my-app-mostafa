@@ -112,7 +112,12 @@ export const AuthLayout: React.FC = () => {
     // Cleanup function
     return () => {
       try {
-        window.google?.accounts.id.cancel();
+        // The cancel() method doesn't exist, so we need to handle cleanup differently
+        // We can't fully clean up the Google Sign-In, but we can at least remove the button
+        const buttonElement = document.getElementById('googleSignInButton');
+        if (buttonElement) {
+          buttonElement.innerHTML = '';
+        }
       } catch (err) {
         console.error('Error cleaning up Google Sign-In:', err);
       }

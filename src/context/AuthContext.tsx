@@ -26,13 +26,21 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined)
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({
   children,
 }) => {
-  const [user, setUser] = useState<User | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
+  // Add development bypass
+  const isDevelopment = import.meta.env.DEV
+  const [user, setUser] = useState<User | null>(isDevelopment ? {
+    id: 'dev-user',
+    email: 'dev@example.com',
+    name: 'Developer'
+  } : null)
+  const [isLoading, setIsLoading] = useState(!isDevelopment)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    checkAuth()
-  }, [])
+    if (!isDevelopment) {
+      checkAuth()
+    }
+  }, [isDevelopment])
 
   const checkAuth = async () => {
     try {

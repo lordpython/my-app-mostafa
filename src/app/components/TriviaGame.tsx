@@ -1,7 +1,7 @@
-import React, { useEffect } from "react"
+import React, { useEffect, useState } from "react"
 import Scoreboard from "./Scoreboard"
 import Gameboard from "./Gameboard"
-import QuestionCard from "./QuestionCard"
+import QuestionDisplay from "./QuestionDisplay"
 import { AnswerFeedback } from "./AnswerFeedback"
 import { MainMenu } from "./MainMenu"
 import TeamRegistration from "./TeamRegistration"
@@ -10,17 +10,7 @@ import GameResults from "./GameResults"
 import Alert from "../../components/ui/Alert"
 import { useGameActions } from "../../hooks/useGameActions"
 import { useAppSelector, useAppDispatch } from "../../hooks/hooks"
-import { setGamePhase, setTimeLeft, updateScore, setError, setCurrentQuestion, selectCategories, setTeams } from "../../features/game/gameSlice"
-import type { ValidateAnswerRequest } from '../../services/api/questionService'
-import MetaQuestions from "./MetaQuestions"
-import type { GenerateQuestionRequest } from '../../services/api/questionService'
-import type { Category } from "../../types"
-
-interface SelectCategoryParams {
-  categoryId: number
-  difficulty: string
-  points: number
-}
+import { setGamePhase, updateScore, setError, setCurrentQuestion, selectCategories, setTeams } from "../../features/game/gameSlice"
 
 const TriviaGame: React.FC = () => {
   const dispatch = useAppDispatch()
@@ -30,18 +20,19 @@ const TriviaGame: React.FC = () => {
     gamePhase: currentGamePhase,
     teams,
     selectedCategories,
-    categories,
     currentQuestion,
     currentTeam,
-    timeLeft,
     error,
   } = useAppSelector(state => state.game)
 
-  const [isAnswerCorrect, setIsAnswerCorrect] = React.useState(false)
-  const [feedbackVisible, setFeedbackVisible] = React.useState(false)
+  const [isAnswerCorrect, setIsAnswerCorrect] = useState(false)
+  const [feedbackVisible, setFeedbackVisible] = useState(false)
+  const [timeLeft, setTimeLeft] = useState(60)
+  const [isQuestionActive, setIsQuestionActive] = useState(false)
+  const [isReadyToAnswer, setIsReadyToAnswer] = useState(false)
 
-  // Define handleAnswerSubmit before the useEffect that uses it
-  const handleAnswerSubmit = React.useCallback(async (answer: string) => {
+  // Handle answer submission
+  const handleAnswerSubmit = async (answer: string) => {
     if (!currentQuestion) return
 
     try {
@@ -54,128 +45,118 @@ const TriviaGame: React.FC = () => {
         setIsAnswerCorrect(response.isCorrect)
         setFeedbackVisible(true)
         if (response.isCorrect && currentTeam) {
-          dispatch(
-            updateScore({
-              teamName: currentTeam,
-              points: currentQuestion.points,
-            }),
-          )
+          dispatch(updateScore({
+            teamName: currentTeam,
+            points: currentQuestion.points,
+          }))
         }
       }
     } catch (err) {
-      dispatch(setError("Failed to submit answer. Please try again."))
+      dispatch(setError("Failed to submit answer"))
     } finally {
       setTimeout(() => {
         setFeedbackVisible(false)
         dispatch(setCurrentQuestion(null))
-        dispatch(setGamePhase("game"))
+        setIsQuestionActive(false)
+        setIsReadyToAnswer(false)
+        setTimeLeft(60)
       }, 2000)
     }
-  }, [currentQuestion, currentTeam, dispatch, submitAnswer])
+  }
 
+  // Timer effect
   useEffect(() => {
-    // Fetch categories when in category selection phase
-    if (currentGamePhase === "categorySelection" && categories.length === 0) {
-      // Fetch categories logic here if not already fetched
-      // For example: dispatch(fetchCategories());
-    }
-  }, [currentGamePhase, categories.length, dispatch])
-
-  // Timer logic with improved dependencies and cleanup
-  useEffect(() => {
-    if (currentGamePhase !== "game" || !currentQuestion) return
-
-    if (timeLeft === 0) {
-      handleAnswerSubmit("")
-      return
-    }
+    if (!isQuestionActive || !isReadyToAnswer || timeLeft <= 0) return
 
     const timer = setInterval(() => {
-      dispatch(setTimeLeft(timeLeft - 1))
+      setTimeLeft(prev => {
+        if (prev <= 1) {
+          handleAnswerSubmit("") // Auto-submit empty answer when time's up
+          return 0
+        }
+        return prev - 1
+      })
     }, 1000)
 
     return () => clearInterval(timer)
-  }, [currentGamePhase, currentQuestion, timeLeft, dispatch, handleAnswerSubmit])
+  }, [isQuestionActive, isReadyToAnswer, timeLeft])
 
-  // Move handleSelectCategory to useCallback
-  const handleSelectCategory = React.useCallback(async ({
-    categoryId,
-    difficulty,
-    points,
-  }: SelectCategoryParams) => {
+  // Handle question selection
+  const handleSelectQuestion = async (categoryId: number, points: number) => {
     try {
       const question = await getQuestion({
         categoryId: categoryId.toString(),
-        difficulty,
+        difficulty: "medium", // You can make this dynamic if needed
         points
       })
+      
       if (question) {
         dispatch(setCurrentQuestion(question))
+        setTimeLeft(60)
+        setIsQuestionActive(true)
+        setIsReadyToAnswer(false) // Will be set to true when player clicks "Ready"
       }
     } catch (error) {
-      console.error("Error selecting category:", error)
-      dispatch(setError("Failed to select category"))
+      dispatch(setError("Failed to load question"))
     }
-  }, [dispatch, getQuestion])
+  }
 
   return (
     <>
       {currentGamePhase === "home" && (
         <MainMenu onStart={() => dispatch(setGamePhase("registration"))} />
       )}
+
       {currentGamePhase === "registration" && (
         <TeamRegistration
           onRegister={(teams) => {
-            dispatch(setTeams(teams)) // Now receiving an array of teams
+            dispatch(setTeams(teams))
             dispatch(setGamePhase("categorySelection"))
           }}
         />
       )}
+
       {currentGamePhase === "categorySelection" && (
         <CategorySelection
           onSubmit={(selection) => {
-            // Create a Category object from the selection
-            const selectedCategory: Category = {
+            const selectedCategory = {
               id: parseInt(selection.categoryId),
-              name: selection.categoryId // You might want to get the actual name from your categories data
-            };
-            dispatch(selectCategories([selectedCategory]));
-            dispatch(setGamePhase("game"));
+              name: selection.categoryId
+            }
+            dispatch(selectCategories([selectedCategory]))
+            dispatch(setGamePhase("game"))
           }}
         />
       )}
+
       {currentGamePhase === "game" && (
         <>
           <Scoreboard teams={teams} currentTeam={currentTeam} />
           {currentQuestion ? (
-            <QuestionCard
+            <QuestionDisplay
               question={currentQuestion}
-              onSubmit={handleAnswerSubmit}
+              onAnswer={handleAnswerSubmit}
+              timeLeft={timeLeft}
+              isReady={isReadyToAnswer}
+              onReady={() => setIsReadyToAnswer(true)}
             />
           ) : (
             <Gameboard
               categories={selectedCategories}
-              onSelectQuestion={(categoryId: number, points: number) => {
-                // Start of Selection
-                const difficulty = "easy" // Example difficulty
-                handleSelectCategory({ categoryId, difficulty, points })
-              }}
+              onSelectQuestion={handleSelectQuestion}
             />
           )}
         </>
       )}
+
       {currentGamePhase === "results" && <GameResults teams={teams} />}
 
-      {currentGamePhase === "meta" && <MetaQuestions />}
-
-      {/* Answer Feedback */}
       <AnswerFeedback
         isVisible={feedbackVisible}
         isCorrect={isAnswerCorrect}
-        message={isAnswerCorrect ? "Correct answer!" : "Incorrect answer!"}
+        message={isAnswerCorrect ? "إجابة صحيحة!" : "إجابة خاطئة!"}
       />
 
-      {/* Alert for Errors */}
       {error && (
         <Alert message={error} onClose={() => dispatch(setError(null))} />
       )}

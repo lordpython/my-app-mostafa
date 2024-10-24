@@ -1,0 +1,39 @@
+/* Base styles */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom utility classes */
+@layer utilities {
+  .forced-colors-adjust-none {
+    forced-color-adjust: none;
+    -ms-high-contrast-adjust: none;
+  }
+
+  .text-size-adjust {
+    -webkit-text-size-adjust: 100%;
+    -moz-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+}
+
+/* Forced colors mode support */
+@media (forced-colors: active) {
+  .glass-morphism {
+    forced-color-adjust: none;
+    -ms-high-contrast-adjust: none;
+  }
+}
+
+/* Performance optimized animations */
+@keyframes gradient {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.animate-gradient {
+  background-size: 200% 200%;
+  animation: gradient 15s ease infinite;
+  transform: translateZ(0); /* Enable hardware acceleration */
+}
