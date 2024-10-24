@@ -7,10 +7,17 @@
   </head>
   <body>
     <div id="root"></div>
-    <!-- Load Google Sign-In API -->
-    <script src="https://accounts.google.com/gsi/client" async defer></script>
-    <!-- Update reCAPTCHA script to use standard version instead of enterprise -->
-    <script src="https://www.google.com/recaptcha/api.js?render=YOUR_SITE_KEY" async defer></script>
+    <!-- Firebase App (the core Firebase SDK) -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js"></script>
+
+    <!-- Add Firebase products that you want to use -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-storage.js"></script>
+
+    <!-- reCAPTCHA -->
+    <script src="https://www.google.com/recaptcha/api.js?render=6LfPt4ApAAAAAOvQzw6TOhYHSPE5fCh7s5G0Aq0j"></script>
+
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

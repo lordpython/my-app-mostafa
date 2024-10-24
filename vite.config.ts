@@ -8,7 +8,8 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
   return {
     define: {
-      'process.env.FIREBASE_APPCHECK_DEBUG_TOKEN': JSON.stringify(env.VITE_FIREBASE_APPCHECK_DEBUG_TOKEN),
+      'process.env.NODE_ENV': JSON.stringify(mode),
+      '__APP_ENV__': JSON.stringify(env)
     },
     plugins: [react()],
     server: {

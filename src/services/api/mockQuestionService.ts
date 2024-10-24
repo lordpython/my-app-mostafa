@@ -6,7 +6,7 @@ const mockQuestions: Question[] = [
   {
     id: "1",
     questionId: "q1",
-    question: "What landmark is shown in this image?",
+    question: "ما هي المدينة التي تقع في المنطقة الشرقية من المملكة العربية السعودية؟",
     categoryName: "Geography",
     points: 100,
     media: {
@@ -18,8 +18,8 @@ const mockQuestions: Question[] = [
   {
     id: "2",
     questionId: "q2",
-    question: "What scientific phenomenon is demonstrated in this video?",
-    categoryName: "Science",
+    question: "ما هو المنصب الذي يعمل فيه الرئيس الأمريكي؟",
+    categoryName: "السياسة",
     points: 200,
     media: {
       type: "video",
