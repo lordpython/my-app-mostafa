@@ -16,12 +16,12 @@
     "firebase-deploy": "firebase deploy"
   },
   "dependencies": {
+    "@firebase/app-check": "^0.9.0",
     "@reduxjs/toolkit": "^2.0.1",
     "axios": "^1.7.7",
     "compression": "^1.7.4",
     "express": "^4.21.1",
-    "firebase": "^10.7.0",
-    "firebase/app-check": "^0.9.0",
+    "firebase": "^10.14.1",
     "framer-motion": "^11.11.9",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
