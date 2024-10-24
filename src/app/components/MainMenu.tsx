@@ -5,10 +5,7 @@ import AnimatedContainer from "../../components/ui/AnimatedContainer"
 
 export const MainMenu: React.FC<{ onStart: () => void }> = ({ onStart }) => (
   <AnimatedContainer animation="fadeIn" className="relative min-h-screen">
-    <div
-      className="absolute inset-0 bg-cover bg-center bg-fixed"
-      style={{ backgroundImage: "url(/bg-pattern.jpg)" }}
-    />
+    <div className="absolute inset-0 bg-menu" />
     
     <div className="absolute inset-0 bg-gradient-to-br from-primary-900/80 via-primary-800/60 to-secondary-900/80" />
 

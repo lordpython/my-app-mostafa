@@ -16,9 +16,14 @@ describe("TeamRegistration", () => {
     const input = screen.getByLabelText(/Team Name/i)
     const button = screen.getByRole("button", { name: /Register/i })
 
-    fireEvent.change(input, { target: { value: "Team Alpha" } })
+    fireEvent.change(input, { target: { value: 'Test Team' } })
     fireEvent.click(button)
 
-    expect(mockRegister).toHaveBeenCalledWith({ teamName: "Team Alpha" })
+    // Update the expected argument to match the component's interface
+    expect(mockRegister).toHaveBeenCalledWith([{
+      name: 'Test Team',
+      players: [],
+      color: expect.any(String)
+    }])
   })
 })

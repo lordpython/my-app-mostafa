@@ -1,7 +1,6 @@
 import type React from 'react'
 import type { RenderOptions } from "@testing-library/react"
 import { render } from "@testing-library/react"
-import userEvent from "@testing-library/user-event"
 import type { PropsWithChildren } from "react"
 import { Provider } from "react-redux"
 import type { AppStore, RootState } from "../app/store"

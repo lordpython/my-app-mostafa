@@ -6,10 +6,7 @@ interface EntryViewProps {
 }
 
 const EntryView: React.FC<EntryViewProps> = ({ onProceed }) => (
-  <div
-    className="entry-view h-screen flex flex-col items-center justify-center bg-cover bg-center"
-    style={{ backgroundImage: 'url(/images/entry-background.jpg)' }}
-  >
+  <div className="entry-view h-screen flex flex-col items-center justify-center bg-entry">
     <h2 className="text-3xl font-bold text-white mb-6">Welcome to the Trivia Game!</h2>
     <Button onClick={onProceed} variant="primary" className="text-xl px-8 py-4">
       Proceed to Registration

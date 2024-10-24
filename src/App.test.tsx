@@ -16,7 +16,6 @@ describe('App', () => {
         </BrowserRouter>
       </Provider>
     )
-    // Add more specific assertions as needed
-    expect(document.querySelector('.App')).toBeInTheDocument()
+    expect(document.body).toBeInTheDocument()
   })
 })

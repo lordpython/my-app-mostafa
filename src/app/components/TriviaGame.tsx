@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from "react"
+import type React from "react";
+import { useEffect, useState } from "react"
 import Scoreboard from "./Scoreboard"
 import Gameboard from "./Gameboard"
 import QuestionDisplay from "./QuestionDisplay"
@@ -10,7 +11,15 @@ import GameResults from "./GameResults"
 import Alert from "../../components/ui/Alert"
 import { useGameActions } from "../../hooks/useGameActions"
 import { useAppSelector, useAppDispatch } from "../../hooks/hooks"
-import { setGamePhase, updateScore, setError, setCurrentQuestion, selectCategories, setTeams } from "../../features/game/gameSlice"
+import { 
+  setGamePhase, 
+  updateScore, 
+  setError, 
+  setCurrentQuestion, 
+  selectCategories as selectGameCategories, 
+  setTeams 
+} from "../../features/game/gameSlice"
+import type { Category } from "../../types"
 
 const TriviaGame: React.FC = () => {
   const dispatch = useAppDispatch()
@@ -81,12 +90,35 @@ const TriviaGame: React.FC = () => {
     return () => clearInterval(timer)
   }, [isQuestionActive, isReadyToAnswer, timeLeft])
 
+  // Handle category selection
+  const handleCategorySelection = async (selection: {
+    categories: string[];
+    subcategories: string[];
+    difficulty: string;
+  }) => {
+    try {
+      // Convert selected categories to Category objects
+      const categoryObjects: Category[] = selection.categories.map(categoryId => ({
+        id: parseInt(categoryId),
+        name: categoryId // You might want to get the actual name from your categories data
+      }))
+
+      // Dispatch selected categories to store
+      dispatch(selectGameCategories(categoryObjects))
+      
+      // Move to game phase
+      dispatch(setGamePhase("game"))
+    } catch (error) {
+      dispatch(setError("Failed to process category selection"))
+    }
+  }
+
   // Handle question selection
   const handleSelectQuestion = async (categoryId: number, points: number) => {
     try {
       const question = await getQuestion({
         categoryId: categoryId.toString(),
-        difficulty: "medium", // You can make this dynamic if needed
+        difficulty: "medium", // You can make this dynamic based on selected difficulty
         points
       })
       
@@ -94,7 +126,7 @@ const TriviaGame: React.FC = () => {
         dispatch(setCurrentQuestion(question))
         setTimeLeft(60)
         setIsQuestionActive(true)
-        setIsReadyToAnswer(false) // Will be set to true when player clicks "Ready"
+        setIsReadyToAnswer(false)
       }
     } catch (error) {
       dispatch(setError("Failed to load question"))
@@ -117,16 +149,7 @@ const TriviaGame: React.FC = () => {
       )}
 
       {currentGamePhase === "categorySelection" && (
-        <CategorySelection
-          onSubmit={(selection) => {
-            const selectedCategory = {
-              id: parseInt(selection.categoryId),
-              name: selection.categoryId
-            }
-            dispatch(selectCategories([selectedCategory]))
-            dispatch(setGamePhase("game"))
-          }}
-        />
+        <CategorySelection onSubmit={handleCategorySelection} />
       )}
 
       {currentGamePhase === "game" && (

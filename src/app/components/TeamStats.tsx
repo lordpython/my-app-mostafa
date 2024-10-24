@@ -27,7 +27,8 @@ const TeamStats: React.FC<TeamStatsProps> = ({
       animate={{ opacity: 1, x: 0 }}
       className="glass-morphism p-4 rounded-xl"
     >
-      <h3 className="text-xl font-bold mb-3" style={{ color: team.color }}>
+      <h3 className={`text-xl font-bold mb-3 team-color-text`}
+          style={{ '--team-color': team.color } as React.CSSProperties}>
         {team.name} Stats
       </h3>
       <div className="grid grid-cols-2 gap-4">

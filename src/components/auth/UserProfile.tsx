@@ -49,7 +49,7 @@ export const UserProfile: React.FC = () => {
             <div className="relative inline-block">
               <img
                 src={user?.avatar || '/images/default-avatar.png'}
-                alt={user?.name}
+                alt={user?.name || 'User avatar'} // Provide a default value
                 className="w-32 h-32 rounded-full border-4 border-primary-500"
               />
               {isEditing && (
@@ -73,13 +73,19 @@ export const UserProfile: React.FC = () => {
           {isEditing ? (
             <form onSubmit={handleSubmit} className="space-y-6" dir="rtl">
               <div>
-                <label className="block text-sm font-medium text-white mb-2 font-arabic">
+                <label 
+                  htmlFor="name-input"
+                  className="block text-sm font-medium text-white mb-2 font-arabic"
+                >
                   الاسم
                 </label>
                 <input
+                  id="name-input"
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
+                  placeholder="أدخل اسمك"
+                  title="حقل الاسم"
                   className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-md 
                            text-white placeholder-white/50 focus:ring-2 focus:ring-primary-500"
                 />

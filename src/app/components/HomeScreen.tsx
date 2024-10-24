@@ -9,10 +9,7 @@ interface HomeScreenProps {
 
 const HomeScreen: React.FC<HomeScreenProps> = ({ onStartPlay }) => (
   <AnimatedContainer animation="fadeIn" className="relative min-h-screen">
-    <div
-      className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-      style={{ backgroundImage: "url(/images/background.jpg)" }}
-    />
+    <div className="absolute inset-0 bg-home" />
     
     {/* Overlay gradient */}
     <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/80" />

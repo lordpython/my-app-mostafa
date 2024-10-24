@@ -27,17 +27,7 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onToggleForm }) => {
     setIsLoading(true)
 
     try {
-      // Get reCAPTCHA token from parent component
-      const recaptchaToken = await window.google?.recaptcha?.enterprise.execute(
-        import.meta.env.VITE_RECAPTCHA_SITE_KEY,
-        { action: 'SIGNUP' }
-      )
-      
-      if (!recaptchaToken) {
-        throw new Error('Failed to get reCAPTCHA token')
-      }
-
-      await register(email, password, name, recaptchaToken)
+      await register(email, password, name)
       navigate(from, { replace: true })
     } catch (err: any) {
       setError(err.message || 'Error during registration')

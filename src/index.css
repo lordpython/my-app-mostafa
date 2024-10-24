@@ -276,3 +276,37 @@
     @apply max-w-[1320px];
   }
 }
+
+/* Add these to your existing CSS */
+.bg-entry {
+  background-image: url('/images/entry-background.jpg');
+  background-size: cover;
+  background-position: center;
+}
+
+.bg-home {
+  background-image: url('/images/background.jpg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+.bg-menu {
+  background-image: url('/images/bg-pattern.jpg');
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+}
+
+.team-color-border {
+  border-top-width: 4px;
+  border-style: solid;
+}
+
+.team-color-text {
+  color: inherit;
+}
+
+.team-color-bg {
+  background-color: inherit;
+}

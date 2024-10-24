@@ -1,4 +1,4 @@
-import React from "react"
+import type React from "react"
 
 const Loader: React.FC = () => (
   <div className="flex justify-center items-center h-full">

@@ -1,9 +1,8 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useAuth } from '../../context/AuthContext'
 import { Button } from '../ui/Button'
-import LoadingSpinner from '../ui/LoadingSpinner'
 
 declare global {
   interface Window {
@@ -15,31 +14,9 @@ declare global {
           prompt: () => void
         }
       }
-      recaptcha?: {
-        enterprise: {
-          ready: (callback: () => void) => void
-          execute: (siteKey: string, options: { action: string }) => Promise<string>
-        }
-      }
     }
   }
 }
-
-// Add validation and error handling for environment variables
-const validateEnvironmentVariables = () => {
-  const errors = [];
-  
-  if (!import.meta.env.VITE_GOOGLE_CLIENT_ID) {
-    errors.push('Missing VITE_GOOGLE_CLIENT_ID');
-  }
-  if (!import.meta.env.VITE_RECAPTCHA_SITE_KEY) {
-    errors.push('Missing VITE_RECAPTCHA_SITE_KEY');
-  }
-  
-  return errors;
-}
-
-const envErrors = validateEnvironmentVariables();
 
 export const AuthLayout: React.FC = () => {
   const [isLogin, setIsLogin] = useState(true)
@@ -48,7 +25,6 @@ export const AuthLayout: React.FC = () => {
   const [name, setName] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
-  const recaptchaRef = useRef<HTMLDivElement>(null)
 
   const { login, register, googleSignIn } = useAuth()
   const navigate = useNavigate()
@@ -56,108 +32,11 @@ export const AuthLayout: React.FC = () => {
 
   const from = (location.state as any)?.from?.pathname || '/game'
 
-  useEffect(() => {
-    if (envErrors.length > 0) {
-      console.error('Environment configuration errors:', envErrors);
-      setError(envErrors.join(', '));
-      return;
-    }
-
-    // Initialize Google Sign-In with error handling
-    const initializeGoogleSignIn = () => {
-      try {
-        if (window.google?.accounts) {
-          window.google.accounts.id.initialize({
-            client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID,
-            callback: handleGoogleResponse,
-            auto_select: false, // Prevent auto-selection of account
-            cancel_on_tap_outside: true // Allow closing the popup by clicking outside
-          });
-
-          const buttonElement = document.getElementById('googleSignInButton');
-          if (buttonElement) {
-            window.google.accounts.id.renderButton(buttonElement, {
-              theme: 'outline',
-              size: 'large',
-              width: '100%',
-              text: 'continue_with' // Show "Continue with Google" text
-            });
-          }
-        }
-      } catch (err) {
-        console.error('Error initializing Google Sign-In:', err);
-        setError('Failed to initialize Google Sign-In');
-      }
-    };
-
-    // Initialize reCAPTCHA with error handling
-    const initializeRecaptcha = () => {
-      try {
-        if (window.google?.recaptcha?.enterprise) {
-          window.google.recaptcha.enterprise.ready(() => {
-            console.log('reCAPTCHA is ready');
-          });
-        } else {
-          console.warn('reCAPTCHA enterprise not available');
-        }
-      } catch (err) {
-        console.error('Error initializing reCAPTCHA:', err);
-        setError('Failed to initialize reCAPTCHA');
-      }
-    };
-
-    initializeGoogleSignIn();
-    initializeRecaptcha();
-
-    // Cleanup function
-    return () => {
-      try {
-        // The cancel() method doesn't exist, so we need to handle cleanup differently
-        // We can't fully clean up the Google Sign-In, but we can at least remove the button
-        const buttonElement = document.getElementById('googleSignInButton');
-        if (buttonElement) {
-          buttonElement.innerHTML = '';
-        }
-      } catch (err) {
-        console.error('Error cleaning up Google Sign-In:', err);
-      }
-    };
-  }, []);
-
-  const executeRecaptcha = async () => {
-    try {
-      if (!window.google?.recaptcha?.enterprise) {
-        throw new Error('reCAPTCHA not initialized');
-      }
-
-      const token = await window.google.recaptcha.enterprise.execute(
-        import.meta.env.VITE_RECAPTCHA_SITE_KEY,
-        { action: isLogin ? 'LOGIN' : 'SIGNUP' }
-      );
-
-      if (!token) {
-        throw new Error('Failed to get reCAPTCHA token');
-      }
-
-      return token;
-    } catch (error) {
-      console.error('reCAPTCHA error:', error);
-      throw new Error('Failed to verify reCAPTCHA. Please try again.');
-    }
-  };
-
   const handleGoogleResponse = async (response: any) => {
     try {
       setIsLoading(true)
       setError(null)
-      
-      // Execute reCAPTCHA before Google Sign-In
-      const recaptchaToken = await executeRecaptcha()
-      if (!recaptchaToken) {
-        throw new Error('Failed to get reCAPTCHA token')
-      }
-      
-      await googleSignIn(response.credential, recaptchaToken)
+      await googleSignIn()
       navigate(from, { replace: true })
     } catch (err: any) {
       setError(err.message || 'حدث خطأ أثناء تسجيل الدخول بواسطة جوجل')
@@ -166,22 +45,53 @@ export const AuthLayout: React.FC = () => {
     }
   }
 
+  useEffect(() => {
+    const initializeGoogleSignIn = () => {
+      try {
+        if (window.google?.accounts) {
+          window.google.accounts.id.initialize({
+            client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID,
+            callback: handleGoogleResponse,
+            auto_select: false,
+            cancel_on_tap_outside: true
+          })
+
+          const buttonElement = document.getElementById('googleSignInButton')
+          if (buttonElement) {
+            window.google.accounts.id.renderButton(buttonElement, {
+              theme: 'outline',
+              size: 'large',
+              width: '100%',
+              text: 'continue_with'
+            })
+          }
+        }
+      } catch (err) {
+        console.error('Error initializing Google Sign-In:', err)
+        setError('Failed to initialize Google Sign-In')
+      }
+    }
+
+    initializeGoogleSignIn()
+
+    return () => {
+      const buttonElement = document.getElementById('googleSignInButton')
+      if (buttonElement) {
+        buttonElement.innerHTML = ''
+      }
+    }
+  }, [])
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError(null)
     setIsLoading(true)
 
     try {
-      // Execute reCAPTCHA before form submission
-      const recaptchaToken = await executeRecaptcha()
-      if (!recaptchaToken) {
-        throw new Error('Failed to get reCAPTCHA token')
-      }
-      
       if (isLogin) {
-        await login(email, password, recaptchaToken)
+        await login(email, password)
       } else {
-        await register(email, password, name, recaptchaToken)
+        await register(email, password, name)
       }
       navigate(from, { replace: true })
     } catch (err: any) {
@@ -293,15 +203,6 @@ export const AuthLayout: React.FC = () => {
                 ? 'ليس لديك حساب؟ سجل الآن'
                 : 'لديك حساب بالفعل؟ سجل دخولك'}
             </button>
-          </div>
-
-          {/* Add invisible reCAPTCHA */}
-          <div ref={recaptchaRef} className="hidden">
-            <div 
-              className="g-recaptcha" 
-              data-sitekey={import.meta.env.VITE_RECAPTCHA_SITE_KEY}
-              data-action={isLogin ? 'LOGIN' : 'SIGNUP'}
-            ></div>
           </div>
         </div>
       </motion.div>

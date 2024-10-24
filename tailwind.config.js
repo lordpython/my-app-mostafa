@@ -90,6 +90,15 @@ export default {
         'neon-strong': '0 0 5px theme(colors.primary.400), 0 0 20px theme(colors.primary.600), 0 0 60px theme(colors.primary.800)',
         'inner-glow': 'inset 0 0 20px theme(colors.primary.500)',
       },
+      borderColor: {
+        'team': 'var(--team-color)',
+      },
+      backgroundColor: {
+        'team': 'var(--team-color)',
+      },
+      textColor: {
+        'team': 'var(--team-color)',
+      },
     },
   },
   plugins: [

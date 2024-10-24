@@ -1,4 +1,5 @@
-import React, { useState } from "react"
+import type React from "react";
+import { useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { useGameActions } from "../../hooks/useGameActions"
 import { useAppDispatch } from "../../hooks/hooks"
@@ -13,9 +14,8 @@ interface CategorySelectionProps {
   onSubmit: (selection: CategorySelectionData) => void;
 }
 
-// Renamed to avoid naming conflict with the component
 export interface CategorySelectionData {
-  categoryId: string;
+  categories: string[];
   subcategories: string[];
   difficulty: string;
 }
@@ -24,22 +24,32 @@ const DIFFICULTIES = ['very easy', 'easy', 'medium', 'hard', 'very hard'] as con
 type Difficulty = typeof DIFFICULTIES[number];
 
 const CategorySelection: React.FC<CategorySelectionProps> = ({ onSubmit }) => {
-  const [selectedCategory, setSelectedCategory] = useState<string>('');
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [selectedSubcategories, setSelectedSubcategories] = useState<string[]>([]);
   const [difficulty, setDifficulty] = useState<Difficulty>('medium');
   const [isLoading, setIsLoading] = useState(false);
   const [hoveredCategory, setHoveredCategory] = useState<string | null>(null);
 
   const handleCategorySelect = (id: string) => {
-    setSelectedCategory(prev => prev === id ? '' : id);
+    setSelectedCategories(prev => {
+      // If category is already selected, remove it
+      if (prev.includes(id)) {
+        return prev.filter(catId => catId !== id);
+      }
+      // If less than 3 categories are selected, add the new one
+      if (prev.length < 3) {
+        return [...prev, id];
+      }
+      return prev;
+    });
   };
 
   const handleSubmit = () => {
-    if (isLoading) return;
+    if (isLoading || selectedCategories.length === 0) return;
     
     setIsLoading(true);
     onSubmit({
-      categoryId: selectedCategory,
+      categories: selectedCategories,
       subcategories: selectedSubcategories,
       difficulty
     });
@@ -109,7 +119,7 @@ const CategorySelection: React.FC<CategorySelectionProps> = ({ onSubmit }) => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
         >
-          اختر الفئات
+          اختر الفئات (حد أقصى 3)
         </motion.h2>
         
         <motion.div 
@@ -126,17 +136,23 @@ const CategorySelection: React.FC<CategorySelectionProps> = ({ onSubmit }) => {
               layout
               className={`
                 relative overflow-hidden rounded-xl cursor-pointer
-                ${selectedCategory === category.id 
+                ${selectedCategories.includes(category.id) 
                   ? 'ring-2 ring-primary-500 bg-white/10' 
                   : 'bg-white/5'
+                }
+                ${selectedCategories.length >= 3 && !selectedCategories.includes(category.id)
+                  ? 'opacity-50 cursor-not-allowed'
+                  : ''
                 }
               `}
               onClick={() => handleCategorySelect(category.id)}
               whileHover={{ 
-                scale: 1.03,
+                scale: selectedCategories.length < 3 || selectedCategories.includes(category.id) ? 1.03 : 1,
                 boxShadow: "0 0 20px rgba(99, 102, 241, 0.2)"
               }}
               whileTap={{ scale: 0.98 }}
+              onHoverStart={() => setHoveredCategory(category.id)}
+              onHoverEnd={() => setHoveredCategory(null)}
             >
               {hoveredCategory === category.id && (
                 <motion.div 
@@ -155,12 +171,34 @@ const CategorySelection: React.FC<CategorySelectionProps> = ({ onSubmit }) => {
                 </h3>
                 {category.subcategories && (
                   <p className="text-sm text-white/70">
-                    {category.subcategories.join(' • ')}
+                    {category.subcategories.slice(0, 3).join(' • ')}...
                   </p>
                 )}
               </div>
             </motion.div>
           ))}
+        </motion.div>
+
+        {/* Difficulty Selection */}
+        <motion.div 
+          className="mt-8"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.3 }}
+        >
+          <h3 className="text-xl font-semibold text-white mb-4 text-center">مستوى الصعوبة</h3>
+          <div className="flex justify-center gap-4 flex-wrap">
+            {DIFFICULTIES.map((level) => (
+              <Button
+                key={level}
+                onClick={() => setDifficulty(level)}
+                variant={difficulty === level ? "primary" : "secondary"}
+                className={`capitalize ${difficulty === level ? 'ring-2 ring-primary-500' : ''}`}
+              >
+                {level}
+              </Button>
+            ))}
+          </div>
         </motion.div>
 
         <motion.div 
@@ -174,7 +212,7 @@ const CategorySelection: React.FC<CategorySelectionProps> = ({ onSubmit }) => {
             variant="primary"
             size="large"
             className="min-w-[200px] relative overflow-hidden group"
-            disabled={!selectedCategory}
+            disabled={selectedCategories.length === 0}
           >
             <motion.div
               className="absolute inset-0 bg-gradient-to-r from-primary-600/20 to-primary-400/20"
@@ -190,6 +228,10 @@ const CategorySelection: React.FC<CategorySelectionProps> = ({ onSubmit }) => {
             />
             <span className="relative z-10">ابدأ اللعب</span>
           </Button>
+          
+          {selectedCategories.length === 0 && (
+            <p className="text-white/60 mt-2">الرجاء اختيار فئة واحدة على الأقل</p>
+          )}
         </motion.div>
       </motion.div>
     </div>

@@ -1,4 +1,5 @@
 // vite.config.ts
+/// <reference types="vitest" />
 import { defineConfig } from "vite"
 import react from "@vitejs/plugin-react"
 import path from "path"
@@ -26,10 +27,22 @@ export default defineConfig({
       "@services": path.resolve(__dirname, "./src/services"),
     }
   },
-  publicDir: 'public',
   build: {
     outDir: 'dist',
     assetsDir: 'assets',
     sourcemap: true,
-  }
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom', 'react-router-dom', '@reduxjs/toolkit'],
+          firebase: ['firebase/app', 'firebase/auth', 'firebase/firestore', 'firebase/storage'],
+          ui: ['framer-motion', 'styled-components'],
+        }
+      }
+    }
+  },
+  optimizeDeps: {
+    include: ['firebase/app', 'firebase/auth', 'firebase/firestore', 'firebase/storage']
+  },
+  publicDir: 'public'
 })

@@ -1,5 +1,5 @@
 // src/components/ui/Button.tsx
-import * as React from "react"
+import type * as React from "react"
 import { motion } from "framer-motion"
 import styled from "styled-components"
 import type { ButtonHTMLAttributes } from 'react'

@@ -28,28 +28,23 @@ export interface ValidateAnswerRequest {
 }
 
 export const questionService = {
-  selectCategories: async (data: SelectCategoriesRequest) => {
-    // Implementation will be added when backend is ready
+  selectCategories: async (_data: SelectCategoriesRequest) => {
     throw new Error("Not implemented")
   },
 
-  generateQuestion: async (data: GenerateQuestionRequest) => {
-    // Implementation will be added when backend is ready
+  generateQuestion: async (_data: GenerateQuestionRequest) => {
     throw new Error("Not implemented")
   },
 
   validateAnswer: async (_data: ValidateAnswerRequest): Promise<ValidateAnswerResponse> => {
-    // Implementation will be added when backend is ready
     throw new Error("Not implemented")
   },
 
-  getGameState: async (sessionId: string): Promise<GameState> => {
-    // Implementation will be added when backend is ready
+  getGameState: async (_sessionId: string): Promise<GameState> => {
     throw new Error("Not implemented")
   },
 
   endSession: async (_sessionId: string) => {
-    // Implementation will be added when backend is ready
     throw new Error("Not implemented")
   }
 }

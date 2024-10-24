@@ -1,24 +1,33 @@
 import type { ReactNode } from "react";
-import React from "react";  // Changed from 'import type React' to 'import React'
 import { createContext, useContext, useState, useEffect } from "react"
-import { apiService } from '../services/api/apiService'
+import { 
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  signOut,
+  onAuthStateChanged,
+  GoogleAuthProvider,
+  signInWithPopup,
+  updateProfile,
+  type User as FirebaseUser
+} from "firebase/auth"
+import { auth } from "../config/firebase"
 
 interface User {
   id: string
-  email: string
-  name: string
+  email: string | null
+  name: string | null
   avatar?: string
+  isAdmin?: boolean
 }
 
 interface AuthContextType {
   user: User | null
   isLoading: boolean
   error: string | null
-  login: (email: string, password: string, recaptchaToken: string) => Promise<void>
-  register: (email: string, password: string, name: string, recaptchaToken: string) => Promise<void>
+  login: (email: string, password: string) => Promise<void>
+  register: (email: string, password: string, name: string) => Promise<void>
   logout: () => Promise<void>
-  resetPassword: (email: string) => Promise<void>
-  googleSignIn: (token: string, recaptchaToken: string) => Promise<void>
+  googleSignIn: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -26,90 +35,108 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined)
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({
   children,
 }) => {
-  // Add development bypass
-  const isDevelopment = process.env.NODE_ENV === 'development'
-  const [user, setUser] = useState<User | null>(isDevelopment ? {
-    id: 'dev-user',
-    email: 'dev@example.com',
-    name: 'Developer'
-  } : null)
-  const [isLoading, setIsLoading] = useState(!isDevelopment)
+  const [user, setUser] = useState<User | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    if (!isDevelopment) {
-      checkAuth()
-    }
-  }, [isDevelopment])
-
-  const checkAuth = async () => {
-    try {
-      const token = localStorage.getItem('token')
-      if (token) {
-        const user = await apiService.getCurrentUser()
-        setUser(user)
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser: FirebaseUser | null) => {
+      // Check for admin session
+      const isAdminSession = localStorage.getItem('adminSession')
+      
+      if (isAdminSession === 'true') {
+        setUser({
+          id: 'admin-id',
+          email: 'admin@admin.com',
+          name: 'Admin',
+          isAdmin: true
+        })
+      } else if (firebaseUser) {
+        setUser({
+          id: firebaseUser.uid,
+          email: firebaseUser.email,
+          name: firebaseUser.displayName,
+          avatar: firebaseUser.photoURL || undefined,
+          isAdmin: false
+        })
+      } else {
+        setUser(null)
       }
-    } catch (error) {
-      console.error('Auth check failed:', error)
-    } finally {
       setIsLoading(false)
+    })
+
+    return () => unsubscribe()
+  }, [])
+
+  const login = async (email: string, password: string) => {
+    try {
+      setError(null)
+      
+      // Check for admin credentials
+      if (email === 'admin@admin.com' && password === 'admin123') {
+        // Set admin user directly without Firebase authentication
+        setUser({
+          id: 'admin-id',
+          email: 'admin@admin.com',
+          name: 'Admin',
+          isAdmin: true
+        })
+        // Store admin session
+        localStorage.setItem('adminSession', 'true')
+        return
+      }
+
+      // Regular user authentication
+      const result = await signInWithEmailAndPassword(auth, email, password)
+      if (result.user) {
+        setUser({
+          id: result.user.uid,
+          email: result.user.email,
+          name: result.user.displayName,
+          avatar: result.user.photoURL || undefined,
+          isAdmin: false
+        })
+      }
+    } catch (err: any) {
+      setError(err.message || 'فشل تسجيل الدخول')
+      throw err
     }
   }
 
-  const login = async (email: string, password: string, recaptchaToken: string) => {
+  const register = async (email: string, password: string, name: string) => {
     try {
       setError(null)
-      const { user, token } = await apiService.login(email, password, recaptchaToken)
-      localStorage.setItem('token', token)
-      setUser(user)
-    } catch (error: any) {
-      setError(error.message || 'فشل تسجيل الدخول')
-      throw error
-    }
-  }
-
-  const register = async (email: string, password: string, name: string, recaptchaToken: string) => {
-    try {
-      setError(null)
-      const { user, token } = await apiService.register(email, password, name, recaptchaToken)
-      localStorage.setItem('token', token)
-      setUser(user)
-    } catch (error: any) {
-      setError(error.message || 'فشل إنشاء الحساب')
-      throw error
+      const { user: firebaseUser } = await createUserWithEmailAndPassword(auth, email, password)
+      // Update user profile with name using the imported updateProfile function
+      if (firebaseUser) {
+        await updateProfile(firebaseUser, { 
+          displayName: name 
+        })
+      }
+    } catch (err: any) {
+      setError(err.message || 'فشل إنشاء الحساب')
+      throw err
     }
   }
 
   const logout = async () => {
     try {
-      await apiService.logout()
-      localStorage.removeItem('token')
-      setUser(null)
-    } catch (error: any) {
-      setError(error.message || 'فشل تسجيل الخروج')
-      throw error
+      // Clear admin session if exists
+      localStorage.removeItem('adminSession')
+      await signOut(auth)
+    } catch (err: any) {
+      setError(err.message || 'فشل تسجيل الخروج')
+      throw err
     }
   }
 
-  const resetPassword = async (email: string) => {
+  const googleSignIn = async () => {
     try {
-      setError(null)
-      await apiService.resetPassword(email)
-    } catch (error: any) {
-      setError(error.message || 'فشل إعادة تعيين كلمة المرور')
-      throw error
-    }
-  }
-
-  const googleSignIn = async (token: string, recaptchaToken: string) => {
-    try {
-      setError(null)
-      const { user, token: authToken } = await apiService.googleAuth(token, recaptchaToken)
-      localStorage.setItem('token', authToken)
-      setUser(user)
-    } catch (error: any) {
-      setError(error.message || 'فشل تسجيل الدخول بواسطة جوجل')
-      throw error
+      const provider = new GoogleAuthProvider()
+      await signInWithPopup(auth, provider)
+    } catch (err: any) {
+      setError(err.message || 'فشل تسجيل الدخول بواسطة جوجل')
+      throw err
     }
   }
 
@@ -122,7 +149,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
         login,
         register,
         logout,
-        resetPassword,
         googleSignIn
       }}
     >
