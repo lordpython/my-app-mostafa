@@ -26,3 +26,5 @@ dist-ssr
 # Update .gitignore to not ignore public directory
 !public/
 !public/images/
+src/config/firebase.ts
+.env
