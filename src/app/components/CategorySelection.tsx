@@ -1,241 +1,208 @@
-import type React from "react";
-import { useState } from "react"
-import { useNavigate } from "react-router-dom"
-import { useGameActions } from "../../hooks/useGameActions"
-import { useAppDispatch } from "../../hooks/hooks"
-import { setGamePhase } from "../../features/game/gameSlice"
-import type { Category } from "../../types"
-import Button from "../../components/ui/Button"
-import Loader from "./Loader"
-import categoriesData from "../../data/categories.json" // Import the categories data
-import { motion, AnimatePresence } from "framer-motion"
+// src/components/CategorySelection.tsx
 
-interface CategorySelectionProps {
-  onSubmit: (selection: CategorySelectionData) => void;
-}
+import { useState, useEffect } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { useAppDispatch, useAppSelector } from '../hooks/hooks'
+import { selectCategories, setGamePhase } from '../features/game/gameSlice'
+import type { Category } from '../../types/game'
+import { Button } from './ui/Button'
+import { gameService } from '../services/gameService'
 
-export interface CategorySelectionData {
-  categories: string[];
-  subcategories: string[];
-  difficulty: string;
-}
+const MAX_CATEGORIES = 6
 
-const DIFFICULTIES = ['very easy', 'easy', 'medium', 'hard', 'very hard'] as const;
-type Difficulty = typeof DIFFICULTIES[number];
+const CategoryCard: React.FC<{
+  category: Category
+  isSelected: boolean
+  onSelect: () => void
+  disabled: boolean
+}> = ({ category, isSelected, onSelect, disabled }) => (
+  <motion.div
+    className={`
+      relative overflow-hidden rounded-xl cursor-pointer transition-all
+      ${isSelected ? 'ring-2 ring-primary-500 bg-white/10' : 'bg-white/5'}
+      ${disabled ? 'opacity-50 cursor-not-allowed' : ''}
+    `}
+    whileHover={!disabled ? { scale: 1.02 } : {}}
+    whileTap={!disabled ? { scale: 0.98 } : {}}
+    onClick={!disabled ? onSelect : undefined}
+  >
+    <div className="p-6">
+      <h3 className="text-xl font-bold mb-2 text-white font-arabic">
+        {category.name}
+      </h3>
+      
+      {category.subcategories && (
+        <div className="space-y-1">
+          {category.subcategories.slice(0, 3).map((sub, index) => (
+            <span
+              key={index}
+              className="inline-block px-2 py-1 bg-white/10 rounded-full text-sm 
+                       text-white/70 ml-2 mb-2 font-arabic"
+            >
+              {sub}
+            </span>
+          ))}
+          {category.subcategories.length > 3 && (
+            <span className="text-white/50 text-sm">
+              +{category.subcategories.length - 3} أخرى
+            </span>
+          )}
+        </div>
+      )}
 
-const CategorySelection: React.FC<CategorySelectionProps> = ({ onSubmit }) => {
-  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
-  const [selectedSubcategories, setSelectedSubcategories] = useState<string[]>([]);
-  const [difficulty, setDifficulty] = useState<Difficulty>('medium');
-  const [isLoading, setIsLoading] = useState(false);
-  const [hoveredCategory, setHoveredCategory] = useState<string | null>(null);
+      {isSelected && (
+        <motion.div
+          className="absolute top-2 right-2 bg-primary-500 rounded-full p-1"
+          initial={{ scale: 0 }}
+          animate={{ scale: 1 }}
+        >
+          <svg
+            className="w-4 h-4 text-white"
+            fill="none"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth="2"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path d="M5 13l4 4L19 7" />
+          </svg>
+        </motion.div>
+      )}
+    </div>
+  </motion.div>
+)
 
-  const handleCategorySelect = (id: string) => {
-    setSelectedCategories(prev => {
-      // If category is already selected, remove it
-      if (prev.includes(id)) {
-        return prev.filter(catId => catId !== id);
-      }
-      // If less than 3 categories are selected, add the new one
-      if (prev.length < 3) {
-        return [...prev, id];
-      }
-      return prev;
-    });
-  };
+const CategorySelection: React.FC = () => {
+  const dispatch = useAppDispatch()
+  const { categories: allCategories } = useAppSelector(state => state.game)
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  const [isLoading, setIsLoading] = useState(false)
+  const [searchTerm, setSearchTerm] = useState('')
 
-  const handleSubmit = () => {
-    if (isLoading || selectedCategories.length === 0) return;
-    
-    setIsLoading(true);
-    onSubmit({
-      categories: selectedCategories,
-      subcategories: selectedSubcategories,
-      difficulty
-    });
-  };
-
-  // Animation variants
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.1,
-        when: "beforeChildren"
-      }
-    },
-    exit: {
-      opacity: 0,
-      transition: {
-        staggerChildren: 0.05,
-        staggerDirection: -1,
-        when: "afterChildren"
+  useEffect(() => {
+    const prefetchQuestions = async () => {
+      if (selectedIds.size === MAX_CATEGORIES) {
+        setIsLoading(true)
+        try {
+          const selectedCategories = allCategories.filter(c => 
+            selectedIds.has(c.id)
+          )
+          await gameService.prefetchQuestions(selectedCategories, 'medium')
+        } finally {
+          setIsLoading(false)
+        }
       }
     }
-  };
 
-  const categoryVariants = {
-    hidden: { y: 20, opacity: 0 },
-    visible: { 
-      y: 0, 
-      opacity: 1,
-      transition: {
-        type: "spring",
-        stiffness: 300,
-        damping: 24
+    prefetchQuestions()
+  }, [selectedIds, allCategories])
+
+  const filteredCategories = allCategories.filter(category =>
+    category.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    category.subcategories?.some(sub =>
+      sub.toLowerCase().includes(searchTerm.toLowerCase())
+    )
+  )
+
+  const handleCategorySelect = (categoryId: string) => {
+    setSelectedIds(prev => {
+      const newSelection = new Set(prev)
+      if (newSelection.has(categoryId)) {
+        newSelection.delete(categoryId)
+      } else if (newSelection.size < MAX_CATEGORIES) {
+        newSelection.add(categoryId)
       }
-    },
-    exit: {
-      y: -20,
-      opacity: 0
-    }
-  };
+      return newSelection
+    })
+  }
 
-  if (isLoading) {
-    return (
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        className="flex justify-center items-center min-h-screen"
-      >
-        <Loader />
-      </motion.div>
-    );
+  const handleSubmit = async () => {
+    if (selectedIds.size < 3) {
+      return
+    }
+
+    setIsLoading(true)
+    try {
+      const selectedCategories = allCategories.filter(c => 
+        selectedIds.has(c.id)
+      )
+      await dispatch(selectCategories(selectedCategories)).unwrap()
+      dispatch(setGamePhase('game'))
+    } catch (error) {
+      console.error('Error selecting categories:', error)
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   return (
-    <div className="min-h-screen p-4 sm:p-6 lg:p-8 bg-gradient-to-br from-neutral-900 via-primary-900/20 to-neutral-900" dir="rtl">
-      <motion.div
-        className="max-w-4xl mx-auto glass-morphism rounded-2xl p-6 sm:p-8"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-      >
-        <motion.h2 
-          className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-6 text-center"
+    <div className="min-h-screen p-8 bg-gradient-to-br from-gray-900 to-gray-800">
+      <div className="max-w-7xl mx-auto">
+        <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
+          className="text-center mb-8"
         >
-          اختر الفئات (حد أقصى 3)
-        </motion.h2>
-        
-        <motion.div 
-          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6"
-          variants={containerVariants}
-          initial="hidden"
-          animate="visible"
-          exit="exit"
+          <h1 className="text-4xl font-bold text-white mb-4 font-arabic">
+            اختر فئات الأسئلة
+          </h1>
+          <p className="text-white/70 text-xl font-arabic">
+            اختر من 3 إلى {MAX_CATEGORIES} فئات للعبة
+          </p>
+        </motion.div>
+
+        {/* Search Bar */}
+        <div className="mb-8">
+          <input
+            type="text"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full max-w-md mx-auto block px-4 py-3 bg-white/10 
+                     border border-white/20 rounded-lg text-white 
+                     placeholder-white/50 focus:ring-2 focus:ring-primary-500"
+            placeholder="ابحث عن فئة..."
+            dir="rtl"
+          />
+        </div>
+
+        {/* Categories Grid */}
+        <motion.div
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ staggerChildren: 0.1 }}
         >
-          {categoriesData.map(category => (
-            <motion.div
+          {filteredCategories.map(category => (
+            <CategoryCard
               key={category.id}
-              variants={categoryVariants}
-              layout
-              className={`
-                relative overflow-hidden rounded-xl cursor-pointer
-                ${selectedCategories.includes(category.id) 
-                  ? 'ring-2 ring-primary-500 bg-white/10' 
-                  : 'bg-white/5'
-                }
-                ${selectedCategories.length >= 3 && !selectedCategories.includes(category.id)
-                  ? 'opacity-50 cursor-not-allowed'
-                  : ''
-                }
-              `}
-              onClick={() => handleCategorySelect(category.id)}
-              whileHover={{ 
-                scale: selectedCategories.length < 3 || selectedCategories.includes(category.id) ? 1.03 : 1,
-                boxShadow: "0 0 20px rgba(99, 102, 241, 0.2)"
-              }}
-              whileTap={{ scale: 0.98 }}
-              onHoverStart={() => setHoveredCategory(category.id)}
-              onHoverEnd={() => setHoveredCategory(null)}
-            >
-              {hoveredCategory === category.id && (
-                <motion.div 
-                  className="absolute inset-0 bg-gradient-to-r from-primary-500/20 to-secondary-500/20"
-                  layoutId="hoverBackground"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.2 }}
-                />
-              )}
-              
-              <div className="relative p-4 z-10">
-                <h3 className="text-lg sm:text-xl font-semibold mb-2 text-white">
-                  {category.name}
-                </h3>
-                {category.subcategories && (
-                  <p className="text-sm text-white/70">
-                    {category.subcategories.slice(0, 3).join(' • ')}...
-                  </p>
-                )}
-              </div>
-            </motion.div>
+              category={category}
+              isSelected={selectedIds.has(category.id)}
+              onSelect={() => handleCategorySelect(category.id)}
+              disabled={!selectedIds.has(category.id) && selectedIds.size >= MAX_CATEGORIES}
+            />
           ))}
         </motion.div>
 
-        {/* Difficulty Selection */}
-        <motion.div 
-          className="mt-8"
+        {/* Submit Button */}
+        <motion.div
+          className="mt-8 text-center"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 0.3 }}
-        >
-          <h3 className="text-xl font-semibold text-white mb-4 text-center">مستوى الصعوبة</h3>
-          <div className="flex justify-center gap-4 flex-wrap">
-            {DIFFICULTIES.map((level) => (
-              <Button
-                key={level}
-                onClick={() => setDifficulty(level)}
-                variant={difficulty === level ? "primary" : "secondary"}
-                className={`capitalize ${difficulty === level ? 'ring-2 ring-primary-500' : ''}`}
-              >
-                {level}
-              </Button>
-            ))}
-          </div>
-        </motion.div>
-
-        <motion.div 
-          className="mt-8 text-center"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
         >
           <Button
             onClick={handleSubmit}
-            variant="primary"
+            disabled={selectedIds.size < 3 || isLoading}
+            isLoading={isLoading}
             size="large"
-            className="min-w-[200px] relative overflow-hidden group"
-            disabled={selectedCategories.length === 0}
+            className="font-arabic"
           >
-            <motion.div
-              className="absolute inset-0 bg-gradient-to-r from-primary-600/20 to-primary-400/20"
-              initial={{ x: "-100%" }}
-              animate={{
-                x: "100%",
-              }}
-              transition={{
-                duration: 2,
-                repeat: Infinity,
-                ease: "linear",
-              }}
-            />
-            <span className="relative z-10">ابدأ اللعب</span>
+            {isLoading ? 'جارٍ التحضير...' : 'ابدأ اللعب'}
           </Button>
-          
-          {selectedCategories.length === 0 && (
-            <p className="text-white/60 mt-2">الرجاء اختيار فئة واحدة على الأقل</p>
-          )}
         </motion.div>
-      </motion.div>
+      </div>
     </div>
-  );
-};
+  )
+}
 
-export default CategorySelection;
+export default CategorySelection

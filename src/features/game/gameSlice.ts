@@ -1,184 +1,235 @@
-    // Start of Selection
-    import type { PayloadAction } from "@reduxjs/toolkit";
-import { createSlice, createAsyncThunk } from "@reduxjs/toolkit"
-    import { apiService } from '../../services/api/serviceConfig'
-    import type { Team, Category, Question, ValidateAnswerResponse } from "../../types"
-    import type { 
-      SelectCategoriesRequest, 
-      GenerateQuestionRequest, 
-      ValidateAnswerRequest 
-    } from '../../services/api/questionService'
-    
-    // Add new thunks
-export const fetchGameState = createAsyncThunk(
-  'game/fetchGameState',
-  async (sessionId: string) => {
-    const response = await apiService.getGameState(sessionId)
-    return response
-  }
-)
+// src/features/game/gameSlice.ts
 
-export const selectGameCategories = createAsyncThunk(
-  'game/selectCategories',
-  async (data: SelectCategoriesRequest) => {
-    const response = await apiService.selectCategories(data)
-    return response
-  }
-)
-
-// Update existing thunks
-export const generateQuestion = createAsyncThunk(
-  'game/generateQuestion',
-  async (data: GenerateQuestionRequest) => {
-    const response = await apiService.generateQuestion(data)
-    return response
-  }
-)
-
-export const validateAnswer = createAsyncThunk(
-  'game/validateAnswer',
-  async (data: ValidateAnswerRequest) => {
-    const response = await apiService.validateAnswer(data)
-    return response
-  }
-)
-
-interface Scores {
-  teamA: number
-  teamB: number
-}
-
-interface GameState {
-  gamePhase: "home" | "entry" | "registration" | "categorySelection" | "game" | "meta" | "results"
-  teams: Team[]
-  categories: Category[]
-  selectedCategories: Category[]
-  scores: Scores
-  currentQuestion: Question | null
-  usedQuestions: string[] // Change the type to string[]
-  error: string | null
-  loading: boolean
-  soundEnabled: boolean
-  timeLeft: number
-  currentTeam: "teamA" | "teamB" | null; // Add this line
-  // Add other necessary properties here
-}
+import { createSlice, createAsyncThunk } from '@reduxjs/toolkit'
+import type { PayloadAction } from '@reduxjs/toolkit'
+import { questionController } from '../../controllers/QuestionController'
+import { gameStateManager } from '../../managers/GameStateManager'
+import type { 
+  GameState, 
+  Team, 
+  Question, 
+  Category, 
+  TeamId,
+  AnswerSubmission 
+} from '../../types/game'
 
 const initialState: GameState = {
-  gamePhase: "home",
-  teams: [],
+  phase: 'home',
+  teams: {
+    teamA: {
+      id: 'teamA',
+      name: '',
+      players: [],
+      color: '#4F46E5',
+      score: 0
+    },
+    teamB: {
+      id: 'teamB',
+      name: '',
+      players: [],
+      color: '#E11D48',
+      score: 0
+    }
+  },
+  currentTeam: null,
   categories: [],
   selectedCategories: [],
-  scores: { teamA: 0, teamB: 0 },
   currentQuestion: null,
-  usedQuestions: [] as string[],
-  error: null,
-  loading: false,
-  soundEnabled: true,
+  usedQuestions: new Set<string>(),
   timeLeft: 60,
-  currentTeam: null, // Add this line
-  // Initialize other properties as needed
+  isAnswering: false,
+  loading: false,
+  error: null,
+  soundEnabled: true,
+  roundNumber: 1,
+  maxRounds: 10
 }
 
+// Async Thunks
+export const initializeGame = createAsyncThunk(
+  'game/initialize',
+  async (_, { rejectWithValue }) => {
+    try {
+      const savedState = gameStateManager.loadGameState()
+      return savedState || initialState
+    } catch (error) {
+      return rejectWithValue('Failed to initialize game')
+    }
+  }
+)
+
+export const submitAnswer = createAsyncThunk(
+  'game/submitAnswer',
+  async (submission: AnswerSubmission, { getState, rejectWithValue }) => {
+    try {
+      const state = getState() as { game: GameState }
+      const { currentQuestion } = state.game
+
+      if (!currentQuestion) {
+        throw new Error('No active question')
+      }
+
+      const result = await questionController.validateAnswer(
+        currentQuestion,
+        submission.answer
+      )
+
+      if (result.isCorrect) {
+        // Calculate time bonus
+        const timeBonus = Math.floor((submission.timeLeft / 60) * 10)
+        result.points += timeBonus
+      }
+
+      return {
+        ...result,
+        teamId: submission.teamId,
+        questionId: currentQuestion.id
+      }
+    } catch (error) {
+      return rejectWithValue('Failed to validate answer')
+    }
+  }
+)
+
+export const generateQuestion = createAsyncThunk(
+  'game/generateQuestion',
+  async ({ categoryId, points }: { categoryId: string; points: number }, 
+    { getState, rejectWithValue }
+  ) => {
+    try {
+      const state = getState() as { game: GameState }
+      const category = state.game.categories.find(c => c.id === categoryId)
+
+      if (!category) {
+        throw new Error('Category not found')
+      }
+
+      const question = await questionController.generateQuestion(
+        category,
+        'medium',
+        points
+      )
+
+      return question
+    } catch (error) {
+      return rejectWithValue('Failed to generate question')
+    }
+  }
+)
+
 const gameSlice = createSlice({
-  name: "game",
+  name: 'game',
   initialState,
   reducers: {
-    setGamePhase(state, action: PayloadAction<GameState["gamePhase"]>) {
-      state.gamePhase = action.payload
+    setGamePhase(state, action: PayloadAction<GameState['phase']>) {
+      state.phase = action.payload
+      if (action.payload === 'game' && !state.currentTeam) {
+        state.currentTeam = 'teamA'
+      }
     },
-    setTeams(state, action: PayloadAction<Team[]>) {
-      state.teams = action.payload
+
+    registerTeams(state, action: PayloadAction<{ teamA: Team; teamB: Team }>) {
+      state.teams.teamA = { ...action.payload.teamA, score: 0 }
+      state.teams.teamB = { ...action.payload.teamB, score: 0 }
+      state.currentTeam = 'teamA'
+      state.phase = 'categorySelection'
     },
-    setCategories(state, action: PayloadAction<Category[]>) {
-      state.categories = action.payload
-    },
+
     selectCategories(state, action: PayloadAction<Category[]>) {
       state.selectedCategories = action.payload
+      state.phase = 'game'
     },
-    updateScore(
-      state,
-      action: PayloadAction<{ teamName: "teamA" | "teamB"; points: number }>,
-    ) {
-      const { teamName, points } = action.payload
-      state.scores[teamName] += points
+
+    updateScore(state, action: PayloadAction<{ teamId: TeamId; points: number }>) {
+      const { teamId, points } = action.payload
+      state.teams[teamId].score += points
     },
-    setCurrentQuestion(state, action: PayloadAction<Question | null>) {
-      state.currentQuestion = action.payload
+
+    switchTeam(state) {
+      state.currentTeam = state.currentTeam === 'teamA' ? 'teamB' : 'teamA'
+      state.isAnswering = false
+      state.timeLeft = 60
     },
-    addUsedQuestion(state, action: PayloadAction<string>) { // Change type to string
-      state.usedQuestions.push(action.payload)
+
+    updateTimeLeft(state, action: PayloadAction<number>) {
+      state.timeLeft = action.payload
     },
-    setError(state, action: PayloadAction<string | null>) {
-      state.error = action.payload
-    },
-    setLoading(state, action: PayloadAction<boolean>) {
-      state.loading = action.payload
-    },
+
     toggleSound(state) {
       state.soundEnabled = !state.soundEnabled
     },
-    setTimeLeft(state, action: PayloadAction<number>) {
-      state.timeLeft = action.payload
+
+    setError(state, action: PayloadAction<string | null>) {
+      state.error = action.payload
     },
-    // Add other reducers as needed
+
+    resetGame: () => initialState,
+
+    // Handle state restoration
+    loadState(state, action: PayloadAction<GameState>) {
+      return { ...action.payload }
+    }
   },
   extraReducers: builder => {
     builder
+      // Initialize Game
+      .addCase(initializeGame.pending, state => {
+        state.loading = true
+      })
+      .addCase(initializeGame.fulfilled, (state, action) => {
+        return { ...action.payload, loading: false }
+      })
+      .addCase(initializeGame.rejected, (state, action) => {
+        state.loading = false
+        state.error = action.payload as string
+      })
+
+      // Submit Answer
+      .addCase(submitAnswer.pending, state => {
+        state.loading = true
+      })
+      .addCase(submitAnswer.fulfilled, (state, action) => {
+        state.loading = false
+        if (action.payload.isCorrect) {
+          state.teams[action.payload.teamId].score += action.payload.points
+        }
+        state.usedQuestions.add(action.payload.questionId)
+        state.currentQuestion = null
+        state.isAnswering = false
+      })
+      .addCase(submitAnswer.rejected, (state, action) => {
+        state.loading = false
+        state.error = action.payload as string
+      })
+
+      // Generate Question
       .addCase(generateQuestion.pending, state => {
         state.loading = true
-        state.error = null
       })
-      .addCase(
-        generateQuestion.fulfilled,
-        (state, action: PayloadAction<Question>) => {
-          state.loading = false
-          state.currentQuestion = action.payload
-          state.usedQuestions.push(action.payload.id)
-        },
-      )
+      .addCase(generateQuestion.fulfilled, (state, action) => {
+        state.loading = false
+        state.currentQuestion = action.payload
+        state.isAnswering = true
+        state.timeLeft = 60
+      })
       .addCase(generateQuestion.rejected, (state, action) => {
         state.loading = false
         state.error = action.payload as string
       })
-      .addCase(validateAnswer.pending, state => {
-        state.loading = true
-        state.error = null
-      })
-      .addCase(
-        validateAnswer.fulfilled,
-        (state, action: PayloadAction<ValidateAnswerResponse>) => {
-          state.loading = false
-          const { isCorrect, points } = action.payload
-          if (isCorrect && state.currentTeam) {
-            state.scores[state.currentTeam] += points
-          }
-          // Optionally, switch to the next team or question
-          state.currentQuestion = null
-          // Update other states as necessary
-        },
-      )
-      .addCase(validateAnswer.rejected, (state, action) => {
-        state.loading = false
-        state.error = action.payload as string
-      })
-  },
+  }
 })
 
 export const {
   setGamePhase,
-  setTeams,
-  setCategories,
+  registerTeams,
   selectCategories,
   updateScore,
-  setCurrentQuestion,
-  addUsedQuestion,
-  setError,
-  setLoading,
+  switchTeam,
+  updateTimeLeft,
   toggleSound,
-  setTimeLeft,
-  // Export other actions as needed
+  setError,
+  resetGame,
+  loadState
 } = gameSlice.actions
 
 export default gameSlice.reducer
-
