@@ -1,6 +1,9 @@
 import type React from "react"
 import { motion } from "framer-motion"
 import type { Team } from "../../types"
+import useSound from 'use-sound';
+import correctSound from '../../assets/sounds/correct.mp3';
+import incorrectSound from '../../assets/sounds/incorrect.mp3';
 
 interface TeamStatsProps {
   team: Team
@@ -20,6 +23,9 @@ const TeamStats: React.FC<TeamStatsProps> = ({
   const accuracy = questionsAnswered > 0 
     ? Math.round((correctAnswers / questionsAnswered) * 100) 
     : 0
+
+  const [playCorrectSound] = useSound(correctSound);
+  const [playIncorrectSound] = useSound(incorrectSound);
 
   return (
     <motion.div

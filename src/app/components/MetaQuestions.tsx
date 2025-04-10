@@ -5,6 +5,9 @@ import Button from "../../components/ui/Button"
 import type { MetaQuestion } from "../../types"
 import { useAppDispatch, useAppSelector } from "../../hooks/hooks"
 import { setGamePhase, updateScore } from "../../features/game/gameSlice"
+import useSound from 'use-sound';
+import correctSound from '../../assets/sounds/correct.mp3';
+import incorrectSound from '../../assets/sounds/incorrect.mp3';
 
 const MetaQuestions: FC = () => {
   const dispatch = useAppDispatch()
@@ -12,6 +15,9 @@ const MetaQuestions: FC = () => {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
   const [showFeedback, setShowFeedback] = useState(false)
   const [isCorrect, setIsCorrect] = useState(false)
+
+  const [playCorrectSound] = useSound(correctSound);
+  const [playIncorrectSound] = useSound(incorrectSound);
 
   // Example meta questions - in production, these would come from your API
   const metaQuestions: MetaQuestion[] = [
@@ -48,6 +54,9 @@ const MetaQuestions: FC = () => {
         teamName: currentTeam,
         points: currentQuestion.points
       }))
+      playCorrectSound();
+    } else {
+      playIncorrectSound();
     }
 
     setTimeout(() => {

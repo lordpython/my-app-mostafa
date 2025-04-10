@@ -9,6 +9,9 @@ import Button from "../../components/ui/Button"
 import Loader from "./Loader"
 import categoriesData from "../../data/categories.json" // Import the categories data
 import { motion, AnimatePresence } from "framer-motion"
+import useSound from 'use-sound';
+import correctSound from '../../assets/sounds/correct.mp3';
+import incorrectSound from '../../assets/sounds/incorrect.mp3';
 
 interface CategorySelectionProps {
   onSubmit: (selection: CategorySelectionData) => void;
@@ -30,16 +33,22 @@ const CategorySelection: React.FC<CategorySelectionProps> = ({ onSubmit }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [hoveredCategory, setHoveredCategory] = useState<string | null>(null);
 
+  const [playCorrectSound] = useSound(correctSound);
+  const [playIncorrectSound] = useSound(incorrectSound);
+
   const handleCategorySelect = (id: string) => {
     setSelectedCategories(prev => {
       // If category is already selected, remove it
       if (prev.includes(id)) {
+        playIncorrectSound();
         return prev.filter(catId => catId !== id);
       }
       // If less than 3 categories are selected, add the new one
       if (prev.length < 3) {
+        playCorrectSound();
         return [...prev, id];
       }
+      playIncorrectSound();
       return prev;
     });
   };
