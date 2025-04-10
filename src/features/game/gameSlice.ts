@@ -1,15 +1,14 @@
-    // Start of Selection
-    import type { PayloadAction } from "@reduxjs/toolkit";
+import type { PayloadAction } from "@reduxjs/toolkit";
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit"
-    import { apiService } from '../../services/api/serviceConfig'
-    import type { Team, Category, Question, ValidateAnswerResponse } from "../../types"
-    import type { 
-      SelectCategoriesRequest, 
-      GenerateQuestionRequest, 
-      ValidateAnswerRequest 
-    } from '../../services/api/questionService'
+import { apiService } from '../../services/api/serviceConfig'
+import type { Team, Category, Question, ValidateAnswerResponse } from "../../types"
+import type { 
+  SelectCategoriesRequest, 
+  GenerateQuestionRequest, 
+  ValidateAnswerRequest 
+} from '../../services/api/questionService'
     
-    // Add new thunks
+// Add new thunks
 export const fetchGameState = createAsyncThunk(
   'game/fetchGameState',
   async (sessionId: string) => {
@@ -181,4 +180,3 @@ export const {
 } = gameSlice.actions
 
 export default gameSlice.reducer
-

@@ -20,6 +20,10 @@ import {
   setTeams 
 } from "../../features/game/gameSlice"
 import type { Category } from "../../types"
+import useSound from 'use-sound';
+import correctSound from '../../assets/sounds/correct.mp3';
+import incorrectSound from '../../assets/sounds/incorrect.mp3';
+import { motion } from 'framer-motion';
 
 const TriviaGame: React.FC = () => {
   const dispatch = useAppDispatch()
@@ -40,6 +44,9 @@ const TriviaGame: React.FC = () => {
   const [isQuestionActive, setIsQuestionActive] = useState(false)
   const [isReadyToAnswer, setIsReadyToAnswer] = useState(false)
 
+  const [playCorrectSound] = useSound(correctSound);
+  const [playIncorrectSound] = useSound(incorrectSound);
+
   // Handle answer submission
   const handleAnswerSubmit = async (answer: string) => {
     if (!currentQuestion) return
@@ -58,6 +65,9 @@ const TriviaGame: React.FC = () => {
             teamName: currentTeam,
             points: currentQuestion.points,
           }))
+          playCorrectSound();
+        } else {
+          playIncorrectSound();
         }
       }
     } catch (err) {
